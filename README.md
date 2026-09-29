@@ -88,3 +88,9 @@ server with authentication and `SWITCHTENDER_PLUGIN_NTFY_TOKEN`.
 
 Per-template channel routing, delivery retries, message templates, and threads or mentions are
 deliberate omissions in this version.
+
+## History
+
+switchtender-plugins was developed privately before its first public release, v0.5.0. The commits
+before it hold the code of every earlier release, v0.2.0 through v0.4.0, tagged `snapshot/vX.Y.Z`.
+Every release from v0.5.0 on comes from this repository.
