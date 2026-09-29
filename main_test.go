@@ -25,6 +25,13 @@ func TestBuildExtension(t *testing.T) {
 			"SWITCHTENDER_TEAMS_WEBHOOK":   "https://teams.example/hook",
 		},
 		WantChannels: "discord, ntfy, teams",
+	}, { // Test 3: The change ticket channels serve beside the chat channels.
+		Env: map[string]string{
+			"SWITCHTENDER_DISCORD_WEBHOOK": "https://discord.example/hook",
+			"SWITCHTENDER_SERVICENOW_URL":  "https://acme.service-now.com",
+			"SWITCHTENDER_JIRA_URL":        "https://acme.atlassian.net",
+		},
+		WantChannels: "discord, servicenow, jira",
 	}}
 	for testNum, test := range tests {
 		t.Run(fmt.Sprintf("test %d", testNum), func(t *testing.T) {

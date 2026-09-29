@@ -1,8 +1,9 @@
 # switchtender-plugins
 
 Official plugins for [SwitchTender](https://switchtender.com). One binary, `switchtender-notify`,
-delivers terminal runs to Discord, ntfy, and Microsoft Teams. Drop it into the server's
-`--plugins-dir` and it registers the channels you configure. No recompile of SwitchTender.
+delivers terminal runs to Discord, ntfy, and Microsoft Teams, and records them on ServiceNow change
+requests and Jira issues. Drop it into the server's `--plugins-dir` and it registers the channels
+you configure. No recompile of SwitchTender.
 
 This repo is also the reference for writing your own plugin: it builds against
 `github.com/kordloom/switchtender/sdk/plugin` exactly the way the
@@ -30,6 +31,8 @@ now notifies each configured channel.
 | discord | `SWITCHTENDER_DISCORD_WEBHOOK` | A Discord webhook URL. One embed per run, color by status. |
 | ntfy | `SWITCHTENDER_NTFY_URL`, optional `SWITCHTENDER_NTFY_TOKEN` | Full topic URL, ntfy.sh or self-hosted. Failed runs publish at high priority. |
 | teams | `SWITCHTENDER_TEAMS_WEBHOOK` | A Teams Workflows incoming-webhook URL. Sends an Adaptive Card. |
+| servicenow | `SWITCHTENDER_SERVICENOW_URL`, plus `SWITCHTENDER_SERVICENOW_USER` and `SWITCHTENDER_SERVICENOW_PASSWORD`, or `SWITCHTENDER_SERVICENOW_TOKEN` | Records each run as a work note on the change request its `change` label names. See Change tickets. |
+| jira | `SWITCHTENDER_JIRA_URL` and `SWITCHTENDER_JIRA_TOKEN`, plus `SWITCHTENDER_JIRA_USER` on Jira Cloud | Records each run as a comment on the issue its `change` label names. See Change tickets. |
 
 Set `SWITCHTENDER_NOTIFY_LINK_BASE` to your SwitchTender URL, such as `https://yard.example.com`,
 and every notification links straight to the run.
@@ -46,12 +49,35 @@ command body: for bash, python, powershell, and go runs the command is the whole
 script does not belong on an external channel. Extra vars are already redacted by the server
 before any notifier sees the run.
 
+## Change tickets
+
+SwitchTender already gathers runs into one change by their `change` label. Label a run with its
+ServiceNow change number, such as `CHG0030001`, or its Jira issue key, such as `OPS-123`, and when
+the run ends the servicenow or jira channel records it on that ticket: what ran and how it ended,
+the command that exports its evidence file, and, with a link base set, links to the run and to
+every run on the change. Set the label when a run is launched through the API, from a job
+template, or by an agent's request. A run without a change label, or whose label is neither a
+change number nor an issue key, is left alone.
+
+The ServiceNow account needs to read `change_request` records and write their work notes. A token
+authenticates as a bearer, otherwise the user and password as basic auth. On Jira Cloud, set the
+account's email as the user and an API token as the token. On Jira Data Center, set only a
+personal access token. The account needs permission to comment on the issue.
+
+Only an exact change number (`CHG` and digits) or issue key is acted on. A ServiceNow change number
+goes into an encoded query, where a caret would add a condition and widen the lookup to another
+change, and an issue key goes into a request path, so anything else in the label is ignored rather
+than sent.
+
 ## Delivery semantics
 
 SwitchTender delivers to each channel once per terminal top-level run (shards and pipeline steps
 do not notify), with a five second timeout. A failed delivery is logged by the server and
 dropped. This is best-effort notification, not a guaranteed queue: a burst of runs beyond a
 channel's rate limit (Discord allows roughly 30 webhook messages per minute) drops the excess.
+
+A ticket that misses a note still has every run in SwitchTender's own change view, which the note
+only points at.
 
 On ntfy.sh the topic name is the only secret, so use a long random topic or a self-hosted ntfy
 server with authentication and `SWITCHTENDER_NTFY_TOKEN`.

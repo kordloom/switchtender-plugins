@@ -40,6 +40,17 @@ func buildExtension(getenv func(string) string) (*plugin.Extension, string) {
 		notifiers["teams"] = notify.Teams(webhook, linkBase, client)
 		channels = append(channels, "teams")
 	}
+	if instance := getenv("SWITCHTENDER_SERVICENOW_URL"); instance != "" {
+		notifiers["servicenow"] = notify.ServiceNow(instance,
+			getenv("SWITCHTENDER_SERVICENOW_USER"), getenv("SWITCHTENDER_SERVICENOW_PASSWORD"),
+			getenv("SWITCHTENDER_SERVICENOW_TOKEN"), linkBase, client)
+		channels = append(channels, "servicenow")
+	}
+	if base := getenv("SWITCHTENDER_JIRA_URL"); base != "" {
+		notifiers["jira"] = notify.Jira(base, getenv("SWITCHTENDER_JIRA_USER"),
+			getenv("SWITCHTENDER_JIRA_TOKEN"), linkBase, client)
+		channels = append(channels, "jira")
+	}
 	if len(notifiers) == 0 {
 		return nil, ""
 	}
