@@ -18,7 +18,7 @@ Grab a release binary, or build from source:
 Put it in a directory and point the server (and any workers) at it:
 
     mkdir -p plugins && mv switchtender-notify plugins/
-    SWITCHTENDER_NTFY_URL=https://ntfy.sh/my-long-random-topic \
+    SWITCHTENDER_PLUGIN_NTFY_URL=https://ntfy.sh/my-long-random-topic \
       switchtender serve --plugins-dir ./plugins
 
 The server log shows `switchtender-notify: serving ntfy` at startup. Every terminal top-level run
@@ -28,18 +28,20 @@ now notifies each configured channel.
 
 | Channel | Environment | Notes |
 |---------|-------------|-------|
-| discord | `SWITCHTENDER_DISCORD_WEBHOOK` | A Discord webhook URL. One embed per run, color by status. |
-| ntfy | `SWITCHTENDER_NTFY_URL`, optional `SWITCHTENDER_NTFY_TOKEN` | Full topic URL, ntfy.sh or self-hosted. Failed runs publish at high priority. |
-| teams | `SWITCHTENDER_TEAMS_WEBHOOK` | A Teams Workflows incoming-webhook URL. Sends an Adaptive Card. |
-| servicenow | `SWITCHTENDER_SERVICENOW_URL`, plus `SWITCHTENDER_SERVICENOW_USER` and `SWITCHTENDER_SERVICENOW_PASSWORD`, or `SWITCHTENDER_SERVICENOW_TOKEN` | Records each run as a work note on the change request its `change` label names. See Change tickets. |
-| jira | `SWITCHTENDER_JIRA_URL` and `SWITCHTENDER_JIRA_TOKEN`, plus `SWITCHTENDER_JIRA_USER` on Jira Cloud | Records each run as a comment on the issue its `change` label names. See Change tickets. |
+| discord | `SWITCHTENDER_PLUGIN_DISCORD_WEBHOOK` | A Discord webhook URL. One embed per run, color by status. |
+| ntfy | `SWITCHTENDER_PLUGIN_NTFY_URL`, optional `SWITCHTENDER_PLUGIN_NTFY_TOKEN` | Full topic URL, ntfy.sh or self-hosted. Failed runs publish at high priority. |
+| teams | `SWITCHTENDER_PLUGIN_TEAMS_WEBHOOK` | A Teams Workflows incoming-webhook URL. Sends an Adaptive Card. |
+| servicenow | `SWITCHTENDER_PLUGIN_SERVICENOW_URL`, plus `SWITCHTENDER_PLUGIN_SERVICENOW_USER` and `SWITCHTENDER_PLUGIN_SERVICENOW_PASSWORD`, or `SWITCHTENDER_PLUGIN_SERVICENOW_TOKEN` | Records each run as a work note on the change request its `change` label names. See Change tickets. |
+| jira | `SWITCHTENDER_PLUGIN_JIRA_URL` and `SWITCHTENDER_PLUGIN_JIRA_TOKEN`, plus `SWITCHTENDER_PLUGIN_JIRA_USER` on Jira Cloud | Records each run as a comment on the issue its `change` label names. See Change tickets. |
 
-Set `SWITCHTENDER_NOTIFY_LINK_BASE` to your SwitchTender URL, such as `https://yard.example.com`,
+Set `SWITCHTENDER_PLUGIN_NOTIFY_LINK_BASE` to your SwitchTender URL, such as `https://yard.example.com`,
 and every notification links straight to the run.
 
-All variables are read by the plugin process, which inherits the server's environment: set them
-where the server runs. A channel with no variable set is simply not served; with nothing set the
-plugin exits with a clear message in the server log.
+Set these where the server runs. The server hands a plugin only the variables named with the
+`SWITCHTENDER_PLUGIN_` prefix, plus the few any process needs, such as `PATH` and `HOME`, so a
+plugin never receives the encryption key or any other secret the server reads from its own
+environment. A variable without the prefix never reaches the plugin. A channel with no variable
+set is not served, and with nothing set the plugin exits and the server log says it skipped it.
 
 ## What a notification carries
 
@@ -80,7 +82,7 @@ A ticket that misses a note still has every run in SwitchTender's own change vie
 only points at.
 
 On ntfy.sh the topic name is the only secret, so use a long random topic or a self-hosted ntfy
-server with authentication and `SWITCHTENDER_NTFY_TOKEN`.
+server with authentication and `SWITCHTENDER_PLUGIN_NTFY_TOKEN`.
 
 ## Future work
 

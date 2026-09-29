@@ -25,30 +25,31 @@ const deliverTimeout = 5 * time.Second
 // when no channel is configured, and the list of configured channel names for the startup log.
 func buildExtension(getenv func(string) string) (*plugin.Extension, string) {
 	client := &http.Client{Timeout: deliverTimeout}
-	linkBase := getenv("SWITCHTENDER_NOTIFY_LINK_BASE")
+	linkBase := getenv("SWITCHTENDER_PLUGIN_NOTIFY_LINK_BASE")
 	notifiers := map[string]sdk.Notifier{}
 	var channels []string
-	if webhook := getenv("SWITCHTENDER_DISCORD_WEBHOOK"); webhook != "" {
+	if webhook := getenv("SWITCHTENDER_PLUGIN_DISCORD_WEBHOOK"); webhook != "" {
 		notifiers["discord"] = notify.Discord(webhook, linkBase, client)
 		channels = append(channels, "discord")
 	}
-	if topicURL := getenv("SWITCHTENDER_NTFY_URL"); topicURL != "" {
-		notifiers["ntfy"] = notify.Ntfy(topicURL, getenv("SWITCHTENDER_NTFY_TOKEN"), linkBase, client)
+	if topicURL := getenv("SWITCHTENDER_PLUGIN_NTFY_URL"); topicURL != "" {
+		notifiers["ntfy"] = notify.Ntfy(topicURL, getenv("SWITCHTENDER_PLUGIN_NTFY_TOKEN"), linkBase,
+			client)
 		channels = append(channels, "ntfy")
 	}
-	if webhook := getenv("SWITCHTENDER_TEAMS_WEBHOOK"); webhook != "" {
+	if webhook := getenv("SWITCHTENDER_PLUGIN_TEAMS_WEBHOOK"); webhook != "" {
 		notifiers["teams"] = notify.Teams(webhook, linkBase, client)
 		channels = append(channels, "teams")
 	}
-	if instance := getenv("SWITCHTENDER_SERVICENOW_URL"); instance != "" {
+	if instance := getenv("SWITCHTENDER_PLUGIN_SERVICENOW_URL"); instance != "" {
 		notifiers["servicenow"] = notify.ServiceNow(instance,
-			getenv("SWITCHTENDER_SERVICENOW_USER"), getenv("SWITCHTENDER_SERVICENOW_PASSWORD"),
-			getenv("SWITCHTENDER_SERVICENOW_TOKEN"), linkBase, client)
+			getenv("SWITCHTENDER_PLUGIN_SERVICENOW_USER"), getenv("SWITCHTENDER_PLUGIN_SERVICENOW_PASSWORD"),
+			getenv("SWITCHTENDER_PLUGIN_SERVICENOW_TOKEN"), linkBase, client)
 		channels = append(channels, "servicenow")
 	}
-	if base := getenv("SWITCHTENDER_JIRA_URL"); base != "" {
-		notifiers["jira"] = notify.Jira(base, getenv("SWITCHTENDER_JIRA_USER"),
-			getenv("SWITCHTENDER_JIRA_TOKEN"), linkBase, client)
+	if base := getenv("SWITCHTENDER_PLUGIN_JIRA_URL"); base != "" {
+		notifiers["jira"] = notify.Jira(base, getenv("SWITCHTENDER_PLUGIN_JIRA_USER"),
+			getenv("SWITCHTENDER_PLUGIN_JIRA_TOKEN"), linkBase, client)
 		channels = append(channels, "jira")
 	}
 	if len(notifiers) == 0 {
@@ -62,8 +63,10 @@ func buildExtension(getenv func(string) string) (*plugin.Extension, string) {
 func main() {
 	ext, channels := buildExtension(os.Getenv)
 	if ext == nil {
-		fmt.Fprintln(os.Stderr,
-			"switchtender-notify: no channel configured; set SWITCHTENDER_DISCORD_WEBHOOK, SWITCHTENDER_NTFY_URL, or SWITCHTENDER_TEAMS_WEBHOOK")
+		fmt.Fprintln(os.Stderr, "switchtender-notify: no channel configured. Set "+
+			"SWITCHTENDER_PLUGIN_DISCORD_WEBHOOK, SWITCHTENDER_PLUGIN_NTFY_URL, "+
+			"SWITCHTENDER_PLUGIN_TEAMS_WEBHOOK, SWITCHTENDER_PLUGIN_SERVICENOW_URL, or "+
+			"SWITCHTENDER_PLUGIN_JIRA_URL.")
 		os.Exit(1)
 	}
 	fmt.Fprintln(os.Stderr, "switchtender-notify: serving "+channels)
