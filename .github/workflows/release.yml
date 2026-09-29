@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set the version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev.$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cross-compile every target
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir dist
+          for target in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64; do
+            os=${target%/*}; arch=${target#*/}
+            out="dist/switchtender-notify_${os}_${arch}"
+            [ "$os" = windows ] && out="$out.exe"
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w" -o "$out" .
+          done
+
+      - name: Package the archives and checksums
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd dist
+          for target in darwin_arm64 darwin_amd64 linux_amd64 linux_arm64; do
+            mkdir "pack_$target"
+            cp "switchtender-notify_$target" "pack_$target/switchtender-notify"
+            tar -czf "switchtender-notify_${VERSION}_${target}.tar.gz" -C "pack_$target" switchtender-notify
+          done
+          mkdir pack_windows
+          cp switchtender-notify_windows_amd64.exe pack_windows/switchtender-notify.exe
+          (cd pack_windows && zip -q "../switchtender-notify_${VERSION}_windows_amd64.zip" switchtender-notify.exe)
+          shasum -a 256 switchtender-notify_${VERSION}_*.tar.gz switchtender-notify_${VERSION}_*.zip > SHA256SUMS
+
+      - name: Attach the artifacts to the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            dist/switchtender-notify_${VERSION}_*.tar.gz \
+            dist/switchtender-notify_${VERSION}_*.zip \
+            dist/SHA256SUMS \
+            --clobber

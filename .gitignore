@@ -1,0 +1,4 @@
+.idea
+switchtender-notify
+dist/
+*.test
