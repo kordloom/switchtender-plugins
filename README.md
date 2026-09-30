@@ -91,6 +91,6 @@ deliberate omissions in this version.
 
 ## History
 
-switchtender-plugins was developed privately before its first public release, v0.5.0. The commits
-before it hold the code of every earlier release, v0.2.0 through v0.4.0, tagged `snapshot/vX.Y.Z`.
-Every release from v0.5.0 on comes from this repository.
+The commits before v0.5.0 each hold the code of an earlier release, v0.2.0 through v0.4.0, tagged
+`snapshot/vX.Y.Z`. Those releases were published from an earlier repository that is no longer
+public. Every release from v0.5.0 on comes from this repository.
