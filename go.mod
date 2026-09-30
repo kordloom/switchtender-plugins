@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	github.com/google/go-cmp v0.7.0
-	github.com/kordloom/switchtender v1.99.0
+	github.com/kordloom/switchtender v1.101.0
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kordloom/loomseal v1.5.3 // indirect
+	github.com/kordloom/loomseal v1.5.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/oklog/run v1.1.0 // indirect
