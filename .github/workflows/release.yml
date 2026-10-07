@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   artifacts:
@@ -53,6 +54,25 @@ jobs:
           (cd pack_windows && zip -q "../switchtender-notify_${VERSION}_windows_amd64.zip" switchtender-notify.exe)
           shasum -a 256 switchtender-notify_${VERSION}_*.tar.gz switchtender-notify_${VERSION}_*.zip > SHA256SUMS
 
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+
+      # The checksums are signed keylessly, with the workflow's GitHub identity, so a user verifies the
+      # release against the repository that published it rather than a key we would have to keep safe.
+      - name: Sign the checksums
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          cd dist
+          for i in 1 2 3; do
+            if cosign sign-blob --yes SHA256SUMS \
+                --output-signature SHA256SUMS.sig \
+                --output-certificate SHA256SUMS.pem; then
+              break
+            fi
+            if [ "$i" = 3 ]; then exit 1; fi
+            sleep 15
+          done
+
       - name: Attach the artifacts to the release
         if: github.ref_type == 'tag'
         env:
@@ -62,5 +82,5 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" \
             dist/switchtender-notify_${VERSION}_*.tar.gz \
             dist/switchtender-notify_${VERSION}_*.zip \
-            dist/SHA256SUMS \
+            dist/SHA256SUMS dist/SHA256SUMS.sig dist/SHA256SUMS.pem \
             --clobber
